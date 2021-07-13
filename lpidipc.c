@@ -15,7 +15,8 @@ static struct class*  class;
 static struct device*  device;
 static int major;
 static int given_task_pid = -1;
-static struct task_struct * given_task = NULL;
+static struct task_struct* given_task = NULL;
+static struct cfs_rq* pid_cfs_rq = NULL;
 
 atomic_t sync = ATOMIC_INIT(0);
 
@@ -48,10 +49,12 @@ static ssize_t comchar_read(struct file *filep, char *buffer, size_t len, loff_t
 {
 	size_t ret = 0;
 	atomic_dec(&sync);
+	given_task = current;
 	while(atomic_read(&sync) < 0)
 	{
 		//udelay(500);
-		usleep_range(12, 12);
+		//usleep_range(12, 12);
+		schedule_timeout_idle(HZ);
 	}
 	return ret;
 }
@@ -60,6 +63,8 @@ static ssize_t comchar_write(struct file *filep, const char *buffer, size_t len,
 {
 	size_t ret = 0;
 	atomic_inc(&sync);
+	//given_task->se.cfs_rq = pid_cfs_rq;
+	//schedule();
 	return ret;
 }
 
